@@ -1,7 +1,7 @@
-from sentence_transformers import SentenceTransformer
+import requests
 
-model = SentenceTransformer(
-    "sentence-transformers/all-MiniLM-L6-v2"
+BASE_URL = (
+    "https://api.dripzoid.com/api"
 )
 
 
@@ -9,9 +9,16 @@ def generate_embedding(
     text: str
 ):
 
-    embedding = model.encode(
-        text,
-        normalize_embeddings=True
+    response = requests.post(
+        f"{BASE_URL}/embed",
+        json={
+            "text": text
+        },
+        timeout=30
     )
 
-    return embedding
+    response.raise_for_status()
+
+    return response.json()[
+        "embedding"
+    ]

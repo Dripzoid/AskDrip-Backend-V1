@@ -86,7 +86,7 @@ def generate_ai_response(
 
     payload = {
     "prompt": final_prompt,
-    "n_predict": 32,
+    "n_predict": 64,
     "temperature": 0.1,
     "top_p": 0.9,
     "repeat_penalty": 1.15,

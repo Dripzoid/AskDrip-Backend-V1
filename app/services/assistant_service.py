@@ -249,15 +249,16 @@ def search_products_from_keywords(
     """
     Concurrent semantic search.
 
-    - Deduplicates keywords
     - Searches in parallel
-    - Keeps highest score per product
+    - Filters weak matches
+    - Keeps all results
+    - Global ranking only
     """
 
     if not keywords:
         return []
 
-    products_map = {}
+    all_products = []
 
     with ThreadPoolExecutor(
         max_workers=min(
@@ -300,36 +301,9 @@ def search_products_from_keywords(
                     reverse=True
                 )[:DEFAULT_LIMIT]
 
-                for product in products:
-
-                    product_key = (
-                        get_product_key(
-                            product
-                        )
-                    )
-
-                    if not product_key:
-                        continue
-
-                    existing = (
-                        products_map.get(
-                            product_key
-                        )
-                    )
-
-                    if (
-                        existing is None
-                        or product.get(
-                            "semanticScore",
-                            0
-                        ) > existing.get(
-                            "semanticScore",
-                            0
-                        )
-                    ):
-                        products_map[
-                            product_key
-                        ] = product
+                all_products.extend(
+                    products
+                )
 
             except Exception as e:
 
@@ -339,7 +313,7 @@ def search_products_from_keywords(
                 )
 
     final_products = sorted(
-        products_map.values(),
+        all_products,
         key=lambda p: p.get(
             "semanticScore",
             0

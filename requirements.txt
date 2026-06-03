@@ -4,19 +4,16 @@ gunicorn==23.0.0
 
 python-dotenv==1.2.2
 
-requests==2.32.4
-httpx==0.28.1
-
 numpy==2.3.1
 scikit-learn==1.8.0
+
+requests==2.32.4
+httpx==0.28.1
 
 pydantic==2.12.5
 pydantic-settings==2.14.1
 
 python-multipart==0.0.22
 
-sentence-transformers==5.4.0
-transformers==5.5.3
-torch==2.11.0
-huggingface-hub==1.10.1
-safetensors==0.7.0
+fastembed==0.7.3
+onnxruntime==1.22.1

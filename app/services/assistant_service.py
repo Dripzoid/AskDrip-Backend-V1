@@ -16,25 +16,6 @@ from app.services.product_service import (
 MIN_SCORE = 0.15
 DEFAULT_LIMIT = 2
 
-PRODUCT_KEYWORDS = [
-    "oversized tshirt",
-    "tshirt",
-    "shirt",
-    "hoodie",
-    "sweatshirt",
-    "jacket",
-    "jeans",
-    "cargo",
-    "trouser",
-    "kurti",
-    "kurta",
-    "saree",
-    "dress",
-    "top",
-    "palazzo",
-    "blouse",
-]
-
 KEYWORD_MAP = {
 
     # Tshirts
@@ -185,23 +166,15 @@ PRODUCT_KEYWORDS = sorted(
     reverse=True
 )
 
-def filter_products(
-    products
-):
+def filter_products(products):
     """
     Remove weak semantic matches.
     """
-
     return [
         product
         for product in products
-        if product.get(
-            "semanticScore",
-            0
-        ) >= MIN_SCORE
+        if product.get("semanticScore", 0) >= MIN_SCORE
     ]
-
-
 
 
 def extract_product_keywords(text: str):
@@ -211,7 +184,6 @@ def extract_product_keywords(text: str):
     occupied = []
 
     for keyword in PRODUCT_KEYWORDS:
-
         match = re.search(
             rf"\b{re.escape(keyword)}\b",
             text
@@ -230,22 +202,13 @@ def extract_product_keywords(text: str):
         if overlap:
             continue
 
-        occupied.append(
-            (start, end)
-        )
+        occupied.append((start, end))
+        found.append(KEYWORD_MAP[keyword])
 
-        found.append(
-            KEYWORD_MAP[keyword]
-        )
+    return list(dict.fromkeys(found))
 
-    return list(
-        dict.fromkeys(found)
-    )
 
-def search_products_from_keywords(
-    keywords,
-    limit: int = 10
-):
+def search_products_from_keywords(keywords, limit: int = 10):
     """
     Concurrent semantic search.
 
@@ -254,17 +217,13 @@ def search_products_from_keywords(
     - Keeps all results
     - Global ranking only
     """
-
     if not keywords:
         return []
 
     all_products = []
 
     with ThreadPoolExecutor(
-        max_workers=min(
-            len(keywords),
-            8
-        )
+        max_workers=min(len(keywords), 8)
     ) as executor:
 
         future_map = {
@@ -276,48 +235,28 @@ def search_products_from_keywords(
             for keyword in keywords
         }
 
-        for future in as_completed(
-            future_map
-        ):
-
+        for future in as_completed(future_map):
             keyword = future_map[future]
 
             try:
+                print(f"\nSEARCHED: {keyword}")
 
-                print(
-                    f"\nSEARCHED: {keyword}"
-                )
-
-                products = filter_products(
-                    future.result()
-                )
+                products = filter_products(future.result())
 
                 products = sorted(
                     products,
-                    key=lambda p: p.get(
-                        "semanticScore",
-                        0
-                    ),
+                    key=lambda p: p.get("semanticScore", 0),
                     reverse=True
                 )[:DEFAULT_LIMIT]
 
-                all_products.extend(
-                    products
-                )
+                all_products.extend(products)
 
             except Exception as e:
-
-                print(
-                    f"SEARCH ERROR [{keyword}]:",
-                    e
-                )
+                print(f"SEARCH ERROR [{keyword}]:", e)
 
     final_products = sorted(
         all_products,
-        key=lambda p: p.get(
-            "semanticScore",
-            0
-        ),
+        key=lambda p: p.get("semanticScore", 0),
         reverse=True
     )
 
@@ -330,40 +269,6 @@ def search_products_from_keywords(
         )
 
     return final_products
-
-def get_product_key(
-    product
-):
-    """
-    Deduplicate product variants.
-
-    Example:
-
-    trendy-baggy-cargo-jeans-61
-    trendy-baggy-cargo-jeans-59
-    trendy-baggy-cargo-jeans-60
-
-    becomes:
-
-    trendy-baggy-cargo-jeans
-    """
-
-    slug = product.get(
-        "slug",
-        ""
-    )
-
-    if slug:
-
-        return sub(
-            r"-\d+$",
-            "",
-            slug
-        )
-
-    return product.get(
-        "id"
-    )
 
 
 def generate_assistant_response(
@@ -386,8 +291,6 @@ def generate_assistant_response(
         ↓
     filter
         ↓
-    deduplicate
-        ↓
     merge
     """
 
@@ -405,28 +308,15 @@ def generate_assistant_response(
     # AI RESPONSE
     # =========================
 
-    ai_response = (
-        generate_ai_response(
-            prompt_for_ai
-        )
-    )
+    ai_response = generate_ai_response(prompt_for_ai)
     ai_response = ai_response.lstrip(": ").strip()
 
     # =========================
     # KEYWORDS
     # =========================
 
-    user_keywords = (
-        extract_product_keywords(
-            user_prompt
-        )
-    )
-
-    ai_keywords = (
-        extract_product_keywords(
-            ai_response
-        )
-    )
+    user_keywords = extract_product_keywords(user_prompt)
+    ai_keywords = extract_product_keywords(ai_response)
 
     all_keywords = list(
         dict.fromkeys(
@@ -435,30 +325,17 @@ def generate_assistant_response(
         )
     )
 
-    print(
-        "\nUSER KEYWORDS:",
-        user_keywords
-    )
-
-    print(
-        "\nAI KEYWORDS:",
-        ai_keywords
-    )
-
-    print(
-        "\nALL KEYWORDS:",
-        all_keywords
-    )
+    print("\nUSER KEYWORDS:", user_keywords)
+    print("\nAI KEYWORDS:", ai_keywords)
+    print("\nALL KEYWORDS:", all_keywords)
 
     # =========================
     # PRODUCT SEARCH
     # =========================
 
-    products = (
-        search_products_from_keywords(
-            all_keywords,
-            limit=10
-        )
+    products = search_products_from_keywords(
+        all_keywords,
+        limit=10
     )
 
     products = products[:8]
@@ -473,8 +350,6 @@ def generate_assistant_response(
     print("\nAI RESPONSE:")
     print(ai_response)
 
-
-
     print("\nFINAL PRODUCTS:")
     for p in products:
         print(
@@ -487,9 +362,6 @@ def generate_assistant_response(
     # =========================
 
     return {
-        "response":
-            ai_response,
-
-        "products":
-            products
+        "response": ai_response,
+        "products": products
     }

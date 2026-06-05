@@ -13,7 +13,7 @@ from app.services.product_service import (
     retrieve_products
 )
 
-MIN_SCORE = 0.35
+MIN_SCORE = 0.15
 DEFAULT_LIMIT = 2
 
 PRODUCT_KEYWORDS = [

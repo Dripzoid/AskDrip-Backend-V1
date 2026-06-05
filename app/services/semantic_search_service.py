@@ -34,7 +34,7 @@ def search_kb(
 def search_products(
     query_embedding,
     top_k: int = 10,
-    min_score: float = 0.35
+    min_score: float = 0.15
 ):
 
     scores = (
